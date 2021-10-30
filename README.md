@@ -12,6 +12,18 @@
 
 <br/>
 
+## 파일 설명
+
+**ku_conv.c** 는 프로세스를 사용한 과제이고 **프로세스를 통한 병렬 처리**, **프로세스간 통신**을 잘 처리해야하는 과제였습니다.
+
+**ku_tconv.c** 는 스레드를 사용한 과제이고 **스레드를 통한 병렬 처리**, **Critical Section에 대한 Lock**을 잘 처리해야 하는 과제였습니다.
+
+<br/>
+
+**ku_conv_prettier.c, ku_tconv_prettier.c** 파일은 제가 github에 올리면서 코드들을 더욱 보기 좋게, 틀렸다고 생각되는 부분들은 수정해서 올리는 파일들 입니다.
+
+<br/>
+
 ## 과제 설명
 
 ![과제 설명 사진1](https://github.com/Ji-InPark/ForImage/blob/master/System_Programming/SPA-1.PNG?raw=true)
@@ -59,18 +71,6 @@ Max_pooling Layer에 생성된 프로세스들(스레드)도 각각 맡은 구�
 ![과제 설명 사진6](https://github.com/Ji-InPark/ForImage/blob/master/System_Programming/SPA-6.PNG?raw=true)
 
 입출력 형식입니다.
-
-<br/>
-
-## 파일 설명
-
-**ku_conv.c** 는 프로세스를 사용한 과제이고 **프로세스를 통한 병렬 처리**, **프로세스간 통신**을 잘 처리해야하는 과제였습니다.
-
-**ku_tconv.c** 는 스레드를 사용한 과제이고 **스레드를 통한 병렬 처리**, **Critical Section에 대한 Lock**을 잘 처리해야 하는 과제였습니다.
-
-<br/>
-
-**ku_conv_prettier.c, ku_tconv_prettier.c** 파일은 제가 github에 올리면서 코드들을 더욱 보기 좋게, 틀렸다고 생각되는 부분들은 수정해서 올리는 파일들 입니다.
 
 <br/>
 
