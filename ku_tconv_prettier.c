@@ -8,38 +8,45 @@
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-typedef struct{
+
+typedef struct{					// Cal_Con 함수에 넘길 구조체
 	int i;
 	int j;
-	int array[3][3];
 }con_arg;
 
-typedef struct{
-	int i;
-	int j;
+typedef struct{					// Cal_Con 함수의 리턴값을 받을 구조체
 	int result;
 }con_ret;
 
-typedef struct{
+typedef struct{					// Cal_Pool 함수에 넘길 구조체
 	int i;
 	int j;
-	int array[2][2];
 }pool_arg;
 
-typedef struct{
-	int i;
-	int j;
+typedef struct{					// Cal_Pool 함수의 리턴값을 받을 구조체
 	int result;
 }pool_ret;
 
-void Cal_Con(int **IM, int conNum, int **CM);
+// convolutional layer 계산을 하는 함수
+void Cal_Con(int conNum);
 
+// convolutional layer 계산을 위한 쓰레드가 실행하는 함수
 void *make_con_thread(void *arg);
 
-void Cal_Pool(int **CM, int conNum, int **PM);
+// max pool layer 계산을 하는 함수
+void Cal_Pool(int conNum);
 
+// max pool layer 계산을 위한 쓰레드가 실행하는 함수
 void *make_pool_thread(void *arg);
 
+// 입력받은 데이터를 저장하는 배열 선언
+int** InputMatrix;
+
+// convolutional layer 계산 후 데이터를 저장하는 배열 선언
+int** ConMatrix;
+
+// max pool layer 계산 후 데이터를 저장하는 배열 선언
+int** PoolMatrix;
 
 int main(int argc, char *argv[])
 {
@@ -65,7 +72,7 @@ int main(int argc, char *argv[])
 	char* token = strtok(rbuf, "\n");
 	int arrayNum = atoi(token);
 	
-	int** InputMatrix;
+	// 입력 데이터 저장
 	InputMatrix = (int**)malloc(sizeof(int*) * arrayNum);
 	for(int i = 0; i < arrayNum; i++)
 	{
@@ -87,19 +94,20 @@ int main(int argc, char *argv[])
 			InputMatrix[i][j] = atoi(token);
 		}
 	}
+	/*-------------------------------------------------*/
 	
-	int** ConMatrix;
+	// convolutional layer 계산 후 데이터 저장
 	ConMatrix = (int**)malloc(sizeof(int*) * (arrayNum - 2));
 	for(int i = 0; i < arrayNum - 2; i++)
 	{
 		ConMatrix[i] = (int*)malloc(sizeof(int) * (arrayNum - 2));
 	}
-
 	
 	int conNum = arrayNum - 2;
 	Cal_Con(InputMatrix, conNum, ConMatrix);
+	/*-------------------------------------------------*/
 
-	int** PoolMatrix;
+	// max pool layer 계산 후 데이터 저장
 	PoolMatrix = (int**)malloc(sizeof(int*) * (conNum / 2));
 	for(int i = 0; i < conNum / 2; i++)
 	{
@@ -107,7 +115,9 @@ int main(int argc, char *argv[])
 	}
 
 	Cal_Pool(ConMatrix, conNum, PoolMatrix);
+	/*-------------------------------------------------*/
 	
+	// 모든 계산 이후 파일로 출력하는 과정
 	int wfd;
 	wfd = open(argv[2], O_WRONLY);
 	len = 5;
@@ -134,32 +144,28 @@ int main(int argc, char *argv[])
 	
 }
 
-void Cal_Con(int **IM, int conNum, int **CM)
+void Cal_Con(int conNum)
 {
-	pthread_t* thread_id;
-	thread_id = (pthread_t*)malloc(sizeof(pthread_t) * conNum * conNum);
-	int status;
-	con_arg *CA;
-	CA = (con_arg*)malloc(sizeof(con_arg) * conNum * conNum);
-	con_ret *CR;
+	pthread_t* thread_id;													// join을 하기 위해 쓰레드 id를 저장하는 변수
+	thread_id = (pthread_t*)malloc(sizeof(pthread_t) * conNum * conNum);	// 필요한 쓰레드 개수만큼 할당
+
+	int status;																// 쓰레드의 상태를 저장하는 변수 (에러 감지 목적)
+	con_arg *CA;															// 각 쓰레드에 파라매터로 넘기기 위해서 구조체 포인터 변수를 선언
+	CA = (con_arg*)malloc(sizeof(con_arg) * conNum * conNum);				// 필요한 쓰레드 개수만큼 할당
+	con_ret *CR;															// 쓰레드의 리턴을 받기위한 구조체 포인터 변수 선언
 	
+
+	// 파라매터로 넘기기 위해 구조체 배열에 값을 넣는 과정
 	for(int i = 0; i < conNum; i++)
 	{
 		for(int j = 0; j < conNum; j++)
 		{
 			CA[i * conNum + j].i = i;
 			CA[i * conNum + j].j = j;
-			for(int k = 0; k < 3; k++)
-			{
-				for(int l = 0;  l < 3; l++)
-				{
-					CA[i * conNum + j].array[k][l] = IM[i + k][j + l];
-				}
-			}
 		}
 	}
 
-
+	// 쓰레드를 만들고 쓰레드가 실행할 함수 그리고 파라매터를 넘기는 과정
 	for(int i = 0; i < conNum; i++)
 	{
 		for(int j = 0; j < conNum; j++)
@@ -176,6 +182,7 @@ void Cal_Con(int **IM, int conNum, int **CM)
 	}
 	
 
+	// 쓰레드의 리턴값을 받고 조인하고 ConMatrix 배열에 데이터 채우는 과정
 	for(int i = 0; i < conNum; i++)
 	{
 		for(int j = 0; j < conNum; j++)
@@ -185,7 +192,7 @@ void Cal_Con(int **IM, int conNum, int **CM)
 			{
 				perror("join con thread");
 			}
-			CM[i][j] = CR->result;
+			ConMatrix[i][j] = CR->result;
 		}
 	}
 }
@@ -198,19 +205,17 @@ void *make_con_thread(void *arg)
 		{-1, -1, -1} };
 	
 	pthread_mutex_lock(&mutex);	
-	con_arg *CA = (con_arg*)arg;
+	con_arg *CA = (con_arg*)arg;				// 파라매터 캐스팅
 	con_ret *CR = malloc(sizeof(con_ret));
 	int sum = 0;
 	for(int i = 0; i < 3; i++)
 	{
 		for(int j = 0; j <3; j++)
 		{
-			sum += CA->array[i][j] * filter[i][j];
+			sum += InputMatrix[CA->i + i][CA->j + j] * filter[i][j];
 		}
 	}
-	
-	CR->j = CA->j;
-	CR->i = CA->i;
+
 	pthread_mutex_unlock(&mutex);
 	CR->result = sum;
 	return CR;
