@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 		PoolMatrix[i] = (int*)malloc(sizeof(int) * (conNum / 2));
 	}
 
-	Cal_Pool(ConMatrix, conNum, PoolMatrix);
+	Cal_Pool(conNum);
 	/*-------------------------------------------------*/
 	
 	// 모든 계산 이후 파일로 출력하는 과정
@@ -221,35 +221,30 @@ void *make_con_thread(void *arg)
 	return CR;
 }
 
-void Cal_Pool(int **CM, int conNum, int **PM)
+void Cal_Pool(int conNum)
 {
+	pthread_t* thread_id;																	// join을 하기 위해 쓰레드 id를 저장하는 변수
+	thread_id = (pthread_t*)malloc(sizeof(pthread_t) * conNum * conNum / 4);				// 필요한 쓰레드 개수만큼 할당
 
-	pthread_t* thread_id;
-	thread_id = (pthread_t*)malloc(sizeof(pthread_t) * conNum * conNum / 4);
-	int status;
-	pool_arg *PA;
-	PA = (pool_arg*)malloc(sizeof(pool_arg) * conNum * conNum / 4);
-	pool_ret *PR;
+	int status;																				// 쓰레드의 상태를 저장하는 변수 (에러 감지 목적)
+	pool_arg *PA;																			// 각 쓰레드에 파라매터로 넘기기 위해서 구조체 포인터 변수를 선언
+	PA = (pool_arg*)malloc(sizeof(pool_arg) * conNum * conNum / 4);							// 필요한 쓰레드 개수만큼 할당
+	pool_ret *PR;																			// 쓰레드의 리턴을 받기위한 구조체 포인터 변수 선언
 	
 
+	// 파라매터로 넘기기 위해 구조체 배열에 값을 넣는 과정
 	int cnt = 0;
 	for(int i = 0; i < conNum; i += 2)
 	{
 		for(int j = 0; j < conNum; j += 2)
 		{
-			PA[cnt].i = i;
-			PA[cnt].j = j;
-			for(int k = 0; k < 2; k++)
-			{
-				for(int l = 0;  l < 2; l++)
-				{
-					PA[cnt].array[k][l] = CM[i + k][j + l];
-				}
-			}
+			PA.i = i;
+			PA.j = j;
 			cnt++;
 		}
 	}
 
+	// 쓰레드를 만들고 쓰레드가 실행할 함수 그리고 파라매터를 넘기는 과정
 	cnt = 0;
 	for(int i = 0; i < conNum; i += 2)
 	{
@@ -267,6 +262,7 @@ void Cal_Pool(int **CM, int conNum, int **PM)
 		}
 	}
 	
+	// 쓰레드의 리턴값을 받고 조인하고 PoolMatrix 배열에 데이터 채우는 과정
 	cnt = 0;
 	for(int i = 0; i < conNum / 2; i++)
 	{
@@ -277,7 +273,7 @@ void Cal_Pool(int **CM, int conNum, int **PM)
 			{
 				perror("join con thread");
 			}
-			PM[i][j] = PR->result;
+			PoolMatrix[i][j] = PR->result;
 			cnt++;
 		}
 	}
@@ -293,13 +289,10 @@ void *make_pool_thread(void *arg)
 	{
 		for(int j = 0; j <2; j++)
 		{
-			if(result < PA->array[i][j])
-					result = PA->array[i][j];
+			if(result < ConMatrix[PA->i + i][PA->j + j])
+					result = ConMatrix[PA->i + i][PA->j + j];
 		}
 	}
-	
-	PR->j = PA->j;
-	PR->i = PA->i;
 	pthread_mutex_unlock(&mutex);
 	PR->result = result;
 	return PR;
